@@ -11,6 +11,7 @@ import (
 )
 
 type Villa struct {
+	Image    string `json:"image"`
 	Name     string `json:"name"`
 	Birthday string `json:"birthday"`
 }
@@ -45,10 +46,12 @@ func main() {
 	collVillager.OnHTML(".mw-parser-output tr", func(t *colly.HTMLElement) {
 		villager := t.ChildText("td:nth-child(1)")
 		birth := t.ChildText("td:nth-child(2)")
+		photo := t.DOM.Find("td:nth-child(1) img").AttrOr("src", "none")
 
 		if villager != "" && villager != "Universals" {
 
 			dataTable := Villa{
+				Image:    "stardewvalleywiki.com" + photo,
 				Name:     villager,
 				Birthday: birth,
 			}
