@@ -16,60 +16,97 @@ type Villa struct {
 	Birthday string `json:"birthday"`
 }
 
+type Items struct {
+	Item       string `json:"item"`
+	Collection string `json:"collection"`
+}
+
 func main() {
 
-	allVillagers := make([]Villa, 0)
+	// allVillagers := make([]Villa, 0)
 
 	// Init collectors
 	cacheDir := filepath.Join("cache")
 
-	collVillager := colly.NewCollector(
+	// colVillager := colly.NewCollector(
+	// 	colly.CacheDir(cacheDir),
+	// 	colly.AllowedDomains("stardewvalleywiki.com"),
+	// )
+
+	// // Feedback: which URL are we scraping
+	// colVillager.OnRequest(func(r *colly.Request) {
+	// 	fmt.Println("Scraping:", r.URL)
+	// })
+
+	// // Feedback: response status
+	// colVillager.OnResponse(func(r *colly.Response) {
+	// 	fmt.Println("Status:", r.StatusCode)
+	// })
+
+	// // Error
+	// colVillager.OnError(func(r *colly.Response, err error) {
+	// 	fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
+	// })
+
+	// colVillager.OnHTML(".mw-parser-output tr", func(t *colly.HTMLElement) {
+	// 	villager := t.ChildText("td:nth-child(1)")
+	// 	birth := t.ChildText("td:nth-child(2)")
+	// 	photo := t.DOM.Find("td:nth-child(1) img").AttrOr("src", "none")
+
+	// 	if villager != "" && villager != "Universals" {
+
+	// 		dataTable := Villa{
+	// 			Image:    "stardewvalleywiki.com" + photo,
+	// 			Name:     villager,
+	// 			Birthday: birth,
+	// 		}
+	// 		allVillagers = append(allVillagers, dataTable)
+	// 	}
+
+	// })
+
+	// colVillager.Visit("https://stardewvalleywiki.com/List_of_All_Gifts")
+
+	// writeJsonVilla(allVillagers)
+
+	// The items collector
+
+	allItems := make([]Items, 0)
+
+	colItems := colly.NewCollector(
 		colly.CacheDir(cacheDir),
 		colly.AllowedDomains("stardewvalleywiki.com"),
 	)
 
 	// Feedback: which URL are we scraping
-	collVillager.OnRequest(func(r *colly.Request) {
+	colItems.OnRequest(func(r *colly.Request) {
 		fmt.Println("Scraping:", r.URL)
 	})
 
 	// Feedback: response status
-	collVillager.OnResponse(func(r *colly.Response) {
+	colItems.OnResponse(func(r *colly.Response) {
 		fmt.Println("Status:", r.StatusCode)
 	})
 
-	// Error
-	collVillager.OnError(func(r *colly.Response, err error) {
-		fmt.Println("Request URL:", r.Request.URL, "failed with response:", r, "\nError:", err)
-	})
+	colItems.OnXML(itemsDivpath, func(t *colly.XMLElement) {
+		item := t.ChildText(itemsNameXPath)
+		// collection :=
 
-	collVillager.OnHTML(".mw-parser-output tr", func(t *colly.HTMLElement) {
-		villager := t.ChildText("td:nth-child(1)")
-		birth := t.ChildText("td:nth-child(2)")
-		photo := t.DOM.Find("td:nth-child(1) img").AttrOr("src", "none")
-
-		if villager != "" && villager != "Universals" {
-
-			dataTable := Villa{
-				Image:    "stardewvalleywiki.com" + photo,
-				Name:     villager,
-				Birthday: birth,
-			}
-			allVillagers = append(allVillagers, dataTable)
+		dataTableItems := Items{
+			Item: item,
+			// Collection: collection,
 		}
 
+		allItems = append(allItems, dataTableItems)
+
 	})
 
-	collVillager.Visit("https://stardewvalleywiki.com/List_of_All_Gifts")
+	colItems.Visit("https://stardewvalleywiki.com/Collections")
 
-	// enc := json.NewEncoder(os.Stdout)
-	// enc.SetIndent("", " ")
-	// enc.Encode(allVillagers)
-
-	writeJson(allVillagers)
+	writeJsonItems(allItems)
 }
 
-func writeJson(data []Villa) {
+func writeJsonVilla(data []Villa) {
 	file, err := json.MarshalIndent(data, "", " ")
 	if err != nil {
 		log.Println("Unable to create json file")
@@ -77,4 +114,14 @@ func writeJson(data []Villa) {
 	}
 
 	_ = ioutil.WriteFile("villagers.json", file, 0644)
+}
+
+func writeJsonItems(data []Items) {
+	file, err := json.MarshalIndent(data, "", " ")
+	if err != nil {
+		log.Println("Unable to create json file")
+		return
+	}
+
+	_ = ioutil.WriteFile("items_collection.json", file, 0644)
 }
